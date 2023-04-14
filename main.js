@@ -21,13 +21,13 @@ app.get("/proxy-video/:uniqueId", async (req, res) => {
 
     try {
       const videoResponse = await axios.get(videoData.src, {
-        responseType: "stream",
+        responseType: "arraybuffer",
       });
 
       res.setHeader("Content-Type", videoResponse.headers["content-type"]);
       res.setHeader("Content-Length", videoResponse.headers["content-length"]);
 
-      videoResponse.data.pipe(res);
+      res.send(videoResponse.data);
     } catch (err) {
       if (err.response && err.response.status === 403) {
         // Generate a new media source
@@ -38,9 +38,9 @@ app.get("/proxy-video/:uniqueId", async (req, res) => {
         videoLinks[uniqueId].src = newResult.src;
         fs.writeFileSync(videoLinksPath, JSON.stringify(videoLinks, null, 2));
 
-        // Stream the new media source
+        // Send the new media source
         const newVideoResponse = await axios.get(newResult.src, {
-          responseType: "stream",
+          responseType: "arraybuffer",
         });
 
         res.setHeader("Content-Type", newVideoResponse.headers["content-type"]);
@@ -49,7 +49,7 @@ app.get("/proxy-video/:uniqueId", async (req, res) => {
           newVideoResponse.headers["content-length"]
         );
 
-        newVideoResponse.data.pipe(res);
+        res.send(newVideoResponse.data);
       } else {
         res.status(400).send(err.message);
       }
